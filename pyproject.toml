@@ -1,0 +1,29 @@
+[project]
+name = "llmctx"
+version = "0.1.0"
+description = "Collect a project directory into a single Markdown file for LLMs."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Dest1n640" }]
+keywords = ["llm", "context", "markdown", "codebase", "prompt"]
+
+# The runtime (llmctx.py) has NO third-party dependencies on purpose:
+# download the single file and run it with any Python 3.8+.
+
+[dependency-groups]
+dev = ["ruff>=0.6", "pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py38"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
