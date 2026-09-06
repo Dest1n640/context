@@ -665,13 +665,30 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _log(message: str) -> None:
+    """Write an ASCII-safe status line to stderr (Windows consoles are cp125x)."""
+    stream = sys.stderr
+    try:
+        enc = stream.encoding or "ascii"
+        message.encode(enc)
+    except (UnicodeEncodeError, LookupError):
+        message = message.encode("ascii", "replace").decode("ascii")
+    print(message, file=stream)
+
+
+def _display_path(out_path: Path) -> str:
+    try:
+        return os.path.relpath(out_path, Path.cwd())
+    except ValueError:  # different drive on Windows
+        return str(out_path)
+
+
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
 
     root = Path(args.directory)
     if not root.is_dir():
-        print(f"llmctx: error: not a directory: {args.directory}",
-              file=sys.stderr)
+        _log(f"llmctx: error: not a directory: {args.directory}")
         return 1
     root = root.resolve()
 
@@ -686,23 +703,21 @@ def main(argv=None) -> int:
     # (Path.write_text gained the newline= argument only in 3.10).
     out_path.write_bytes(document.encode("utf-8"))
 
-    rel_out = os.path.relpath(out_path, Path.cwd())
-    print("llmctx: wrote {} — {} files, ~{} tokens ({})".format(
-        rel_out, stats["files"], format(stats["tokens"], ","),
-        human_kb(stats["bytes"])), file=sys.stderr)
+    _log("llmctx: wrote {} - {} files, ~{} tokens ({})".format(
+        _display_path(out_path), stats["files"], format(stats["tokens"], ","),
+        human_kb(stats["bytes"])))
     if stats["skipped_binary"]:
-        print("llmctx: skipped {} binary file(s)".format(
-            len(stats["skipped_binary"])), file=sys.stderr)
+        _log("llmctx: skipped {} binary file(s)".format(
+            len(stats["skipped_binary"])))
     seen = set()
     for rel, lineno, label in stats["secret_hits"]:
         key = (rel, label)
         if key in seen:
             continue
         seen.add(key)
-        print(f"llmctx: ⚠ possible secret in {rel}:{lineno} ({label})", file=sys.stderr)
+        _log(f"llmctx: WARNING possible secret in {rel}:{lineno} ({label})")
     if stats["secret_hits"] and not args.redact:
-        print("llmctx: review the flagged files or re-run with --redact",
-              file=sys.stderr)
+        _log("llmctx: review the flagged files or re-run with --redact")
     return 0
 
 
