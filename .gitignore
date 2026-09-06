@@ -1,0 +1,10 @@
+# Выходные файлы генератора контекста
+project_context.md
+*_context.md
+
+# macOS
+.DS_Store
+
+# Редакторы / IDE
+.idea/
+.vscode/
